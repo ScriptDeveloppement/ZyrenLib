@@ -12,12 +12,6 @@ local Zyren = loadstring(game:HttpGet("https://raw.githubusercontent.com/YourUse
 ```lua
 local MainTab = Zyren:CreateTab("Main")
 })
-
---[[
-Name = <string> - The name of the tab.
-Icon = <string> - The icon of the tab.
-PremiumOnly = <bool> - Makes the tab accessible to Sirus Premium users only.
-]]
 ```
 ## Creating Groupboxes
 ```lua
@@ -48,13 +42,6 @@ Tab:AddToggle({
 })
 ```
 
-### Changing the value of an existing Toggle
-```lua
-CoolToggle:Set(true)
-```
-
-
-
 ## Creating a Color Picker
 ```lua
 Tab:AddColorPicker(config)
@@ -83,9 +70,6 @@ CombatGroup:AddSlider({
     end
 })
 ```
-
-
-
 
 ## Creating a Dropdown menu
 ```lua
