@@ -10,13 +10,13 @@ local Zyren = loadstring(game:HttpGet("https://raw.githubusercontent.com/YourUse
 ```
 ## Creating a Tab
 ```lua
-local MainTab = Zyren:CreateTab("Main")
+local Tab = Zyren:CreateTab("Main")
 
 ```
 ## Creating Groupboxes
 ```lua
-local LeftGroupbox = MainTab:CreateGroup("Combat", "left")  -- "left" or "right" column
-local RightGroupbox = MainTab:CreateGroup("Movement", "right")
+local LeftGroupbox = Tab:CreateGroup("Combat", "left")  -- "left" or "right" column
+local RightGroupbox = Tab:CreateGroup("Movement", "right")
 ```
 You can add elements to sections the same way you would add them to a tab normally.
 
