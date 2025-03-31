@@ -11,7 +11,7 @@ local Zyren = loadstring(game:HttpGet("https://raw.githubusercontent.com/YourUse
 ## Creating a Tab
 ```lua
 local MainTab = Zyren:CreateTab("Main")
-})
+
 ```
 ## Creating Groupboxes
 ```lua
