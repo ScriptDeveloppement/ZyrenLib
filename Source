@@ -1,13 +1,13 @@
 -- Skid Softworks UI Library
--- Inspired by Linoria, rebranded and customized
+-- Inspired by LinoriaLib, rebranded as Skid Softworks
 -- Version 1.0
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
-local SkidSoftworks = {}
-SkidSoftworks.__index = SkidSoftworks
+local Library = {}
+Library.__index = Library
 
 -- Utility Functions
 local function createInstance(className, properties)
@@ -15,19 +15,18 @@ local function createInstance(className, properties)
     for prop, value in pairs(properties or {}) do
         instance[prop] = value
     end
-    return.click(function() end)
     return instance
 end
 
 local function lerp(a, b, t)
+_accessible = true
     return a + (b - a) * t
 end
 
 -- Library Initialization
-function SkidSoftworks.new()
-    local self = setmetatable({}, SkidSoftworks)
+function Library.new()
+    local self = setmetatable({}, Library)
     
-    -- Create Main ScreenGui
     self.ScreenGui = createInstance("ScreenGui", {
         Name = "SkidSoftworksUI",
         ResetOnSpawn = false,
@@ -35,103 +34,138 @@ function SkidSoftworks.new()
     })
     self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     
+    self.Windows = {}
+    
     return self
 end
 
 -- Window Creation
-function SkidSoftworks:MakeWindow(options)
+function Library:CreateWindow(options)
     local window = {}
     window.Title = options.Title or "Skid Softworks UI"
+    window.Center = options.Center or false
+    window.AutoShow = options.AutoShow or false
+    window.TabPadding = options.TabPadding or 4
+    window.MenuFadeTime = options.MenuFadeTime or 0.2
     window.Tabs = {}
     
     -- Create Window Frame
     window.Frame = createInstance("Frame", {
-        Size = UDim2.new(0, 400, 0, 300),
-        Position = UDim2.new(0.5, -200, 0.5, -150),
-        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        Size = options.Size or UDim2.new(0, 450, 0, 350),
+        Position = options.Position or (window.Center and UDim2.new(0.5, -225, 0.5, -175) or UDim2.new(0, 100, 0, 100)),
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
         BorderSizePixel = 0,
         Active = true,
-        Draggable = true
+        Draggable = true,
+        ClipsDescendants = true
     })
     window.Frame.Parent = self.ScreenGui
     
-    -- Window Title
-    local title = createInstance("TextLabel", {
+    -- Window Title Bar
+    window.TitleBar = createInstance("Frame", {
         Size = UDim2.new(1, 0, 0, 30),
-        Position = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+        BorderSizePixel = 0
+    })
+    window.TitleBar.Parent = window.Frame
+    
+    local titleLabel = createInstance("TextLabel", {
+        Size = UDim2.new(1, -10, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
         Text = window.Title,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         TextSize = 14,
-        Font = Enum.Font.SourceSansBold
+        Font = Enum.Font.SourceSansBold,
+        TextXAlignment = Enum.TextXAlignment.Left
     })
-    title.Parent = window.Frame
+    titleLabel.Parent = window.TitleBar
     
     -- Tab Container
     window.TabContainer = createInstance("Frame", {
-        Size = UDim2.new(1, 0, 1, -30),
+        Size = UDim2.new(1, 0, 0, 30),
         Position = UDim2.new(0, 0, 0, 30),
-        BackgroundTransparency = 1
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     })
     window.TabContainer.Parent = window.Frame
     
+    -- Content Container
+    window.ContentContainer = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 1, -60),
+        Position = UDim2.new(0, 0, 0, 60),
+        BackgroundTransparency = 1
+    })
+    window.ContentContainer.Parent = window.Frame
+    
+    -- Fade Effect
+    if window.AutoShow then
+        window.Frame.BackgroundTransparency = 1
+        local tweenInfo = TweenInfo.new(window.MenuFadeTime, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+        local tween = TweenService:Create(window.Frame, tweenInfo, {BackgroundTransparency = 0})
+        tween:Play()
+    end
+    
+    table.insert(self.Windows, window)
     return window
 end
 
 -- Tab Creation
-function SkidSoftworks:MakeTab(window, name)
+function Library:CreateTab(window, name)
     local tab = {}
     tab.Name = name
     tab.Sections = {}
     
-    tab.Frame = createInstance("Frame", {
+    tab.Content = createInstance("Frame", {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Visible = false
     })
-    tab.Frame.Parent = window.TabContainer
+    tab.Content.Parent = window.ContentContainer
     
     -- Tab Button
     local tabButton = createInstance("TextButton", {
         Size = UDim2.new(0, 100, 0, 30),
-        Position = UDim2.new(0, #window.Tabs * 100, 0, 0),
+        Position = UDim2.new(0, window.TabPadding + (#window.Tabs * (100 + window.TabPadding)), 0, 0),
         Text = name,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextColor3 = Color3.fromRGB(200, 200, 200),
         TextSize = 12,
         Font = Enum.Font.SourceSans,
-        BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        BorderSizePixel = 0
     })
-    tabButton.Parent = window.Frame
+    tabButton.Parent = window.TabContainer
     
     -- Tab Button Click Handler
     tabButton.MouseButton1Click:Connect(function()
         for _, otherTab in pairs(window.Tabs) do
-            otherTab.Frame.Visible = false
+            otherTab.Content.Visible = false
         end
-        tab.Frame.Visible = true
+        tab.Content.Visible = true
     end)
     
     table.insert(window.Tabs, tab)
     if #window.Tabs == 1 then
-        tab.Frame.Visible = true
+        tab.Content.Visible = true
     end
     
     return tab
 end
 
 -- Section Creation
-function SkidSoftworks:AddSection(tab, name)
-    local section = {}
-    section.Name = name
-    section.Elements = {}
+function Library:AddGroupbox(tab, name, side)
+    local groupbox = {}
+    groupbox.Name = name
+    groupbox.Side = side or "Left" -- Linoria-style Left/Right groupboxes
+    groupbox.Elements = {}
     
-    section.Frame = createInstance("Frame", {
-        Size = UDim2.new(1, -10, 0, 0),
-        Position = UDim2.new(0, 5, 0, 5 + (#tab.Sections * 150)),
-        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+    groupbox.Frame = createInstance("Frame", {
+        Size = UDim2.new(0.5, -10, 1, -10),
+        Position = UDim2.new(groupbox.Side == "Left" and 0 or 0.5, 5, 0, 5),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        BorderSizePixel = 0,
         AutomaticSize = Enum.AutomaticSize.Y
     })
-    section.Frame.Parent = tab.Frame
+    groupbox.Frame.Parent = tab.Content
     
     local title = createInstance("TextLabel", {
         Size = UDim2.new(1, 0, 0, 20),
@@ -139,55 +173,58 @@ function SkidSoftworks:AddSection(tab, name)
         TextColor3 = Color3.fromRGB(200, 200, 200),
         TextSize = 12,
         Font = Enum.Font.SourceSansSemibold,
-        BackgroundTransparency = 1
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top
     })
-    title.Parent = section.Frame
+    title.Parent = groupbox.Frame
     
-    table.insert(tab.Sections, section)
-    return section
+    table.insert(tab.Sections, groupbox)
+    return groupbox
 end
 
 -- Button Creation
-function SkidSoftworks:AddButton(section, options)
+function Library:AddButton(groupbox, options)
     local button = {}
-    button.Text = options.Name or "Button"
+    button.Text = options.Text or "Button"
     button.Callback = options.Callback or function() end
     
     local buttonFrame = createInstance("TextButton", {
         Size = UDim2.new(1, -10, 0, 30),
-        Position = UDim2.new(0, 5, 0, 25 + (#section.Elements * 35)),
+        Position = UDim2.new(0, 5, 0, 25 + (#groupbox.Elements * 35)),
         Text = button.Text,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         TextSize = 12,
         Font = Enum.Font.SourceSans,
-        BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        BorderSizePixel = 0
     })
-    buttonFrame.Parent = section.Frame
+    buttonFrame.Parent = groupbox.Frame
     
     buttonFrame.MouseButton1Click:Connect(button.Callback)
     
-    table.insert(section.Elements, button)
+    table.insert(groupbox.Elements, button)
     return button
 end
 
 -- Toggle Creation
-function SkidSoftworks:AddToggle(section, options)
+function Library:AddToggle(groupbox, options)
     local toggle = {}
-    toggle.Name = options.Name or "Toggle"
+    toggle.Text = options.Text or "Toggle"
     toggle.Default = options.Default or false
     toggle.Callback = options.Callback or function() end
     toggle.State = toggle.Default
     
     local toggleFrame = createInstance("Frame", {
         Size = UDim2.new(1, -10, 0, 30),
-        Position = UDim2.new(0, 5, 0, 25 + (#section.Elements * 35)),
+        Position = UDim2.new(0, 5, 0, 25 + (#groupbox.Elements * 35)),
         BackgroundTransparency = 1
     })
-    toggleFrame.Parent = section.Frame
+    toggleFrame.Parent = groupbox.Frame
     
     local label = createInstance("TextLabel", {
         Size = UDim2.new(0.8, 0, 1, 0),
-        Text = toggle.Name,
+        Text = toggle.Text,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         TextSize = 12,
         Font = Enum.Font.SourceSans,
@@ -199,24 +236,25 @@ function SkidSoftworks:AddToggle(section, options)
     local toggleButton = createInstance("TextButton", {
         Size = UDim2.new(0, 20, 0, 20),
         Position = UDim2.new(1, -25, 0, 5),
-        BackgroundColor3 = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        BackgroundColor3 = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100),
+        BorderSizePixel = 0
     })
     toggleButton.Parent = toggleFrame
     
     toggleButton.MouseButton1Click:Connect(function()
         toggle.State = not toggle.State
-        toggleButton.BackgroundColor3 = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        toggleButton.BackgroundColor3 = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
         toggle.Callback(toggle.State)
     end)
     
-    table.insert(section.Elements, toggle)
+    table.insert(groupbox.Elements, toggle)
     return toggle
 end
 
 -- Slider Creation
-function SkidSoftworks:AddSlider(section, options)
+function Library:AddSlider(groupbox, options)
     local slider = {}
-    slider.Name = options.Name or "Slider"
+    slider.Text = options.Text or "Slider"
     slider.Min = options.Min or 0
     slider.Max = options.Max or 100
     slider.Default = options.Default or slider.Min
@@ -225,31 +263,34 @@ function SkidSoftworks:AddSlider(section, options)
     
     local sliderFrame = createInstance("Frame", {
         Size = UDim2.new(1, -10, 0, 50),
-        Position = UDim2.new(0, 5, 0, 25 + (#section.Elements * 35)),
+        Position = UDim2.new(0, 5, 0, 25 + (#groupbox.Elements * 35)),
         BackgroundTransparency = 1
     })
-    sliderFrame.Parent = section.Frame
+    sliderFrame.Parent = groupbox.Frame
     
     local label = createInstance("TextLabel", {
         Size = UDim2.new(1, 0, 0, 20),
-        Text = slider.Name .. ": " .. slider.Value,
+        Text = slider.Text .. ": " .. slider.Value,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         TextSize = 12,
         Font = Enum.Font.SourceSans,
-        BackgroundTransparency = 1
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left
     })
     label.Parent = sliderFrame
     
     local track = createInstance("Frame", {
         Size = UDim2.new(1, 0, 0, 10),
         Position = UDim2.new(0, 0, 0, 25),
-        BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        BorderSizePixel = 0
     })
     track.Parent = sliderFrame
     
     local fill = createInstance("Frame", {
         Size = UDim2.new((slider.Value - slider.Min) / (slider.Max - slider.Min), 0, 1, 0),
-        BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        BackgroundColor3 = Color3.fromRGB(0, 120, 255),
+        BorderSizePixel = 0
     })
     fill.Parent = track
     
@@ -274,13 +315,13 @@ function SkidSoftworks:AddSlider(section, options)
             local t = math.clamp((mousePos.X - trackPos.X) / trackSize.X, 0, 1)
             slider.Value = math.floor(lerp(slider.Min, slider.Max, t))
             fill.Size = UDim2.new(t, 0, 1, 0)
-            label.Text = slider.Name .. ": " .. slider.Value
+            label.Text = slider.Text .. ": " .. slider.Value
             slider.Callback(slider.Value)
         end
     end)
     
-    table.insert(section.Elements, slider)
+    table.insert(groupbox.Elements, slider)
     return slider
 end
 
-return SkidSoftworks
+return Library
