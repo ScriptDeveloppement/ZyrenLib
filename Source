@@ -1,1 +1,286 @@
+-- Skid Softworks UI Library
+-- Inspired by Linoria, rebranded and customized
+-- Version 1.0
 
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local SkidSoftworks = {}
+SkidSoftworks.__index = SkidSoftworks
+
+-- Utility Functions
+local function createInstance(className, properties)
+    local instance = Instance.new(className)
+    for prop, value in pairs(properties or {}) do
+        instance[prop] = value
+    end
+    return.click(function() end)
+    return instance
+end
+
+local function lerp(a, b, t)
+    return a + (b - a) * t
+end
+
+-- Library Initialization
+function SkidSoftworks.new()
+    local self = setmetatable({}, SkidSoftworks)
+    
+    -- Create Main ScreenGui
+    self.ScreenGui = createInstance("ScreenGui", {
+        Name = "SkidSoftworksUI",
+        ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    })
+    self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    return self
+end
+
+-- Window Creation
+function SkidSoftworks:MakeWindow(options)
+    local window = {}
+    window.Title = options.Title or "Skid Softworks UI"
+    window.Tabs = {}
+    
+    -- Create Window Frame
+    window.Frame = createInstance("Frame", {
+        Size = UDim2.new(0, 400, 0, 300),
+        Position = UDim2.new(0.5, -200, 0.5, -150),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        BorderSizePixel = 0,
+        Active = true,
+        Draggable = true
+    })
+    window.Frame.Parent = self.ScreenGui
+    
+    -- Window Title
+    local title = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 30),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        Text = window.Title,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 14,
+        Font = Enum.Font.SourceSansBold
+    })
+    title.Parent = window.Frame
+    
+    -- Tab Container
+    window.TabContainer = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 1, -30),
+        Position = UDim2.new(0, 0, 0, 30),
+        BackgroundTransparency = 1
+    })
+    window.TabContainer.Parent = window.Frame
+    
+    return window
+end
+
+-- Tab Creation
+function SkidSoftworks:MakeTab(window, name)
+    local tab = {}
+    tab.Name = name
+    tab.Sections = {}
+    
+    tab.Frame = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = false
+    })
+    tab.Frame.Parent = window.TabContainer
+    
+    -- Tab Button
+    local tabButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 100, 0, 30),
+        Position = UDim2.new(0, #window.Tabs * 100, 0, 0),
+        Text = name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.SourceSans,
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    })
+    tabButton.Parent = window.Frame
+    
+    -- Tab Button Click Handler
+    tabButton.MouseButton1Click:Connect(function()
+        for _, otherTab in pairs(window.Tabs) do
+            otherTab.Frame.Visible = false
+        end
+        tab.Frame.Visible = true
+    end)
+    
+    table.insert(window.Tabs, tab)
+    if #window.Tabs == 1 then
+        tab.Frame.Visible = true
+    end
+    
+    return tab
+end
+
+-- Section Creation
+function SkidSoftworks:AddSection(tab, name)
+    local section = {}
+    section.Name = name
+    section.Elements = {}
+    
+    section.Frame = createInstance("Frame", {
+        Size = UDim2.new(1, -10, 0, 0),
+        Position = UDim2.new(0, 5, 0, 5 + (#tab.Sections * 150)),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+        AutomaticSize = Enum.AutomaticSize.Y
+    })
+    section.Frame.Parent = tab.Frame
+    
+    local title = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        Text = name,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 12,
+        Font = Enum.Font.SourceSansSemibold,
+        BackgroundTransparency = 1
+    })
+    title.Parent = section.Frame
+    
+    table.insert(tab.Sections, section)
+    return section
+end
+
+-- Button Creation
+function SkidSoftworks:AddButton(section, options)
+    local button = {}
+    button.Text = options.Name or "Button"
+    button.Callback = options.Callback or function() end
+    
+    local buttonFrame = createInstance("TextButton", {
+        Size = UDim2.new(1, -10, 0, 30),
+        Position = UDim2.new(0, 5, 0, 25 + (#section.Elements * 35)),
+        Text = button.Text,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.SourceSans,
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    })
+    buttonFrame.Parent = section.Frame
+    
+    buttonFrame.MouseButton1Click:Connect(button.Callback)
+    
+    table.insert(section.Elements, button)
+    return button
+end
+
+-- Toggle Creation
+function SkidSoftworks:AddToggle(section, options)
+    local toggle = {}
+    toggle.Name = options.Name or "Toggle"
+    toggle.Default = options.Default or false
+    toggle.Callback = options.Callback or function() end
+    toggle.State = toggle.Default
+    
+    local toggleFrame = createInstance("Frame", {
+        Size = UDim2.new(1, -10, 0, 30),
+        Position = UDim2.new(0, 5, 0, 25 + (#section.Elements * 35)),
+        BackgroundTransparency = 1
+    })
+    toggleFrame.Parent = section.Frame
+    
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(0.8, 0, 1, 0),
+        Text = toggle.Name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.SourceSans,
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    label.Parent = toggleFrame
+    
+    local toggleButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 20, 0, 20),
+        Position = UDim2.new(1, -25, 0, 5),
+        BackgroundColor3 = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    })
+    toggleButton.Parent = toggleFrame
+    
+    toggleButton.MouseButton1Click:Connect(function()
+        toggle.State = not toggle.State
+        toggleButton.BackgroundColor3 = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        toggle.Callback(toggle.State)
+    end)
+    
+    table.insert(section.Elements, toggle)
+    return toggle
+end
+
+-- Slider Creation
+function SkidSoftworks:AddSlider(section, options)
+    local slider = {}
+    slider.Name = options.Name or "Slider"
+    slider.Min = options.Min or 0
+    slider.Max = options.Max or 100
+    slider.Default = options.Default or slider.Min
+    slider.Callback = options.Callback or function() end
+    slider.Value = slider.Default
+    
+    local sliderFrame = createInstance("Frame", {
+        Size = UDim2.new(1, -10, 0, 50),
+        Position = UDim2.new(0, 5, 0, 25 + (#section.Elements * 35)),
+        BackgroundTransparency = 1
+    })
+    sliderFrame.Parent = section.Frame
+    
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        Text = slider.Name .. ": " .. slider.Value,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.SourceSans,
+        BackgroundTransparency = 1
+    })
+    label.Parent = sliderFrame
+    
+    local track = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 10),
+        Position = UDim2.new(0, 0, 0, 25),
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    })
+    track.Parent = sliderFrame
+    
+    local fill = createInstance("Frame", {
+        Size = UDim2.new((slider.Value - slider.Min) / (slider.Max - slider.Min), 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    })
+    fill.Parent = track
+    
+    local dragging = false
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    
+    track.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    RunService.RenderStepped:Connect(function()
+        if dragging then
+            local mousePos = UserInputService:GetMouseLocation()
+            local trackPos = track.AbsolutePosition
+            local trackSize = track.AbsoluteSize
+            local t = math.clamp((mousePos.X - trackPos.X) / trackSize.X, 0, 1)
+            slider.Value = math.floor(lerp(slider.Min, slider.Max, t))
+            fill.Size = UDim2.new(t, 0, 1, 0)
+            label.Text = slider.Name .. ": " .. slider.Value
+            slider.Callback(slider.Value)
+        end
+    end)
+    
+    table.insert(section.Elements, slider)
+    return slider
+end
+
+return SkidSoftworks
